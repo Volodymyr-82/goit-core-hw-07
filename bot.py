@@ -64,6 +64,8 @@ def show_birthday(args, book):
 def birthdays(args, book):
     upcoming = book.get_upcoming_birthdays()
     result = "Upcoming birthdays:\n"
+    for birthday_info in upcoming:
+        result += f"{birthday_info['name']}: {birthday_info['birthday']}\n"
     return result.strip()
 
 
