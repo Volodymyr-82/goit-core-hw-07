@@ -35,6 +35,50 @@ class AddressBook(UserDict):
             return True
         return False
     
+    def get_upcoming_birthdays():
+        """
+        Повертає список контактів, у яких день народження припадає на наступні 7 днів,
+        включаючи поточний день. Якщо день народження припадає на вихідний, 
+        переносить дату привітання на наступний понеділок.
+        """
+        upcoming_birthdays = []
+        today = datetime.today().date()
+        
+        for record in self.data.values():
+            if record.birthday is None:
+                continue
+                
+            # Отримуємо дату народження
+            birthday_date = record.birthday.date.date()
+            
+            # Створюємо дату народження для поточного року
+            birthday_this_year = birthday_date.replace(year=today.year)
+            
+            # Якщо день народження вже минув цього року, беремо наступний рік
+            if birthday_this_year < today:
+                birthday_this_year = birthday_date.replace(year=today.year + 1)
+            
+            # Перевіряємо, чи день народження припадає на наступні 7 днів
+            days_until_birthday = (birthday_this_year - today).days
+            
+            if 0 <= days_until_birthday <= 7:
+                # Перевіряємо, чи припадає на вихідний (субота=5, неділя=6)
+                congratulation_date = birthday_this_year
+                
+                # Якщо день народження припадає на суботу або неділю
+                if birthday_this_year.weekday() == 5:  # Субота
+                    congratulation_date = birthday_this_year + timedelta(days=2)  # Понеділок
+                elif birthday_this_year.weekday() == 6:  # Неділя
+                    congratulation_date = birthday_this_year + timedelta(days=1)  # Понеділок
+                
+                upcoming_birthdays.append({
+                    "name": record.name.value,
+                    "birthday": congratulation_date.strftime("%d.%m.%Y")
+                })
+        
+        return upcoming_birthdays
+
+    
     def __str__(self):
         if not self.data:
             return "Адресна книга порожня"
@@ -92,39 +136,40 @@ class Birthday(Field):
         super().__init__(value)
 
 
+if __name__ == "__main__":
 
-# Створення нової адресної книги
-book = AddressBook()
+    # Створення нової адресної книги
+    book = AddressBook()
 
-# Створення запису для John
-john_record = Record("John")
-john_record.add_phone("1234567890")
-john_record.add_phone("5555555555")
-john_record.add_birthday("12.12.2024")
-# Додавання запису John до адресної книги
-book.add_record(john_record)
+    # Створення запису для John
+    john_record = Record("John")
+    john_record.add_phone("1234567890")
+    john_record.add_phone("5555555555")
+    john_record.add_birthday("12.12.2024")
+    # Додавання запису John до адресної книги
+    book.add_record(john_record)
 
-# Створення та додавання нового запису для Jane
-jane_record = Record("Jane")
-jane_record.add_phone("9876543210")
-book.add_record(jane_record)
+    # Створення та додавання нового запису для Jane
+    jane_record = Record("Jane")
+    jane_record.add_phone("9876543210")
+    book.add_record(jane_record)
 
-# Виведення всіх записів у книзі
-    
-print(book)
+    # Виведення всіх записів у книзі
+        
+    print(book)
 
-# Знаходження та редагування телефону для John
-john = book.find("John")
-john.edit_phone("1234567890", "1112223333")
+    # Знаходження та редагування телефону для John
+    john = book.find("John")
+    john.edit_phone("1234567890", "1112223333")
 
-print(john)  # Виведення: Contact name: John, phones: 1112223333; 5555555555
+    print(john)  # Виведення: Contact name: John, phones: 1112223333; 5555555555
 
-# Пошук конкретного телефону у записі John
-found_phone = john.find_phone("5555555555")
-print(f"{john.name}: {found_phone}")  # Виведення: John: 5555555555
+    # Пошук конкретного телефону у записі John
+    found_phone = john.find_phone("5555555555")
+    print(f"{john.name}: {found_phone}")  # Виведення: John: 5555555555
 
-# Видалення запису Jane
-book.delete("Jane")
-    
+    # Видалення запису Jane
+    book.delete("Jane")
+        
         
 
