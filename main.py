@@ -124,7 +124,6 @@ def birthdays(args, book):
     
     return result.strip()
 
-
 def main():
     book = AddressBook()
     
