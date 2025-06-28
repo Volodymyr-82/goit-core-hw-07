@@ -1,6 +1,6 @@
 from collections import UserDict
 import re
-from datetime import datetime 
+from datetime import datetime, timedelta 
 
 class Field:
     def __init__(self, value):
@@ -35,12 +35,8 @@ class AddressBook(UserDict):
             return True
         return False
     
-    def get_upcoming_birthdays():
-        """
-        Повертає список контактів, у яких день народження припадає на наступні 7 днів,
-        включаючи поточний день. Якщо день народження припадає на вихідний, 
-        переносить дату привітання на наступний понеділок.
-        """
+    def get_upcoming_birthdays(self):  
+       
         upcoming_birthdays = []
         today = datetime.today().date()
         
@@ -48,8 +44,25 @@ class AddressBook(UserDict):
             if record.birthday is None:
                 continue
                 
-            # Отримуємо дату народження
-            birthday_date = record.birthday.date.date()
+            
+            birthday_date = None
+            try:
+                if hasattr(record.birthday, 'date') and hasattr(record.birthday.date, 'date'):
+                    # Якщо birthday.date є datetime об'єктом
+                    birthday_date = record.birthday.date.date()
+                elif hasattr(record.birthday, 'date'):
+                    # Якщо birthday.date є date об'єктом
+                    birthday_date = record.birthday.date
+                else:
+                    # Якщо зберігається тільки рядок, парсимо його
+                    birthday_date = datetime.strptime(record.birthday.value, "%d.%m.%Y").date()
+            except (ValueError, AttributeError):
+                # Пропускаємо записи з неправильним форматом дати
+                continue
+            
+            # Якщо не вдалося отримати дату, пропускаємо
+            if birthday_date is None:
+                continue
             
             # Створюємо дату народження для поточного року
             birthday_this_year = birthday_date.replace(year=today.year)
@@ -108,7 +121,7 @@ class Record:
         for inx, phone in enumerate(self.phones):
             if phone.value==old_phone_number:
                 self.phones[inx]=Phone(new_phone_number)
-            return
+                return
         raise ValueError ('old number not found')
     
     def find_phone(self, phone_number):
