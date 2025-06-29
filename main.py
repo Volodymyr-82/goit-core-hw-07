@@ -24,8 +24,6 @@ def parse_input(user_input):
 
 @input_error
 def add_contact(args, book: AddressBook):
-    if len(args) < 2:
-        raise IndexError("Name and phone are required")
     
     name, phone, *_ = args
     record = book.find(name)
@@ -40,29 +38,24 @@ def add_contact(args, book: AddressBook):
         record.add_phone(phone)
     return message
 
-
+@input_error
 def change_contact(args, book):
-    if len(args) < 3:
-        raise IndexError("Name, old phone, and new phone are required")
+    
     
     name, old_phone, new_phone = args
     record = book.find(name)
     
-    if record is None:
-        raise KeyError(name)
-    
     record.edit_phone(old_phone, new_phone)
     return "Contact updated."
 
-
+@input_error
 def show_phone(args, book):
-    try:
-        name= args[0]
-        num=book[name]
-        return num
-    except KeyError:
-        return f"Contact '{name}' not found."
-
+    
+    name= args[0]
+    num=book[name]
+    return num
+    
+@input_error
 def show_all(book):
     if not book.data:
         return "No contacts found."
@@ -98,19 +91,11 @@ def add_birthday(args, book):
 
 @input_error
 def show_birthday(args, book):
-    if len(args) < 1:
-        raise IndexError("Name is required")
     
     name = args[0]
     record = book.find(name)
-    
-    if record is None:
-        raise KeyError(name)
-    
-    if record.birthday is None:
-        return f"No birthday set for {name}."
-    
     return f"{name}'s birthday: {record.birthday.value}"
+
 @input_error
 def birthdays(args, book):
     upcoming = book.get_upcoming_birthdays()
