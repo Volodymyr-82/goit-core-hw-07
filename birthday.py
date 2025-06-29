@@ -35,6 +35,95 @@ class AddressBook(UserDict):
             return True
         return False
     
+    dfrom collections import UserDict
+import re
+from datetime import datetime, timedelta 
+
+class Field:
+    def __init__(self, value):
+        self.value = value
+
+    def __str__(self):
+        return str(self.value)
+
+class Name(Field):
+    def __init__(self, value):
+        if not value.strip():
+            raise ValueError("Name cannot be empty")
+        super().__init__(value.strip())
+
+class Phone(Field):
+    def __init__(self, value):
+        # Clean the phone number (remove spaces, dashes, etc.)
+        cleaned_value = re.sub(r'[^\d]', '', value)
+        if not cleaned_value.isdigit() or len(cleaned_value) != 10:
+            raise ValueError('Phone number must consist of exactly 10 digits')
+        super().__init__(cleaned_value)
+
+class Birthday(Field):
+    def __init__(self, value):
+        date_format = "%d.%m.%Y"
+        try:
+            # Validate and store the datetime object
+            self.date = datetime.strptime(value, date_format).date()
+            super().__init__(value)
+        except ValueError:
+            raise ValueError("Invalid date format. Use DD.MM.YYYY")
+
+class Record:
+    def __init__(self, name):
+        self.name = Name(name)
+        self.phones = []
+        self.birthday = None
+    
+    def add_phone(self, phone_number):
+        self.phones.append(Phone(phone_number))
+
+    def add_birthday(self, birthday_str):
+        self.birthday = Birthday(birthday_str)
+
+    def remove_phone(self, phone_number):
+        # Clean the input for comparison
+        cleaned_number = re.sub(r'[^\d]', '', phone_number)
+        for phone in self.phones:
+            if phone.value == cleaned_number:
+                self.phones.remove(phone)
+                return True
+        return False
+    
+    def edit_phone(self, old_phone_number, new_phone_number):
+        cleaned_old = re.sub(r'[^\d]', '', old_phone_number)
+        for idx, phone in enumerate(self.phones):
+            if phone.value == cleaned_old:
+                self.phones[idx] = Phone(new_phone_number)
+                return
+        raise ValueError('Old phone number not found')
+    
+    def find_phone(self, phone_number):
+        cleaned_number = re.sub(r'[^\d]', '', phone_number)
+        for phone in self.phones:
+            if phone.value == cleaned_number:
+                return phone
+        return None
+    
+    def __str__(self):
+        phone_str = "; ".join(phone.value for phone in self.phones) if self.phones else "No phones"
+        birthday_str = f", birthday: {self.birthday.value}" if self.birthday else ""
+        return f'Contact name: {self.name.value}, phones: {phone_str}{birthday_str}'
+
+class AddressBook(UserDict):
+    def add_record(self, record):
+        self.data[record.name.value] = record
+    
+    def find(self, name):
+        return self.data.get(name, None)
+    
+    def delete(self, name):
+        if name in self.data:
+            del self.data[name]
+            return True
+        return False
+    
     def get_upcoming_birthdays(self):  
        
         upcoming_birthdays = []
@@ -43,58 +132,44 @@ class AddressBook(UserDict):
         for record in self.data.values():
             if record.birthday is None:
                 continue
-                
             
-            birthday_date = None
             try:
-                if hasattr(record.birthday, 'date') and hasattr(record.birthday.date, 'date'):
-                    # Якщо birthday.date є datetime об'єктом
-                    birthday_date = record.birthday.date.date()
-                elif hasattr(record.birthday, 'date'):
-                    # Якщо birthday.date є date об'єктом
-                    birthday_date = record.birthday.date
-                else:
-                    # Якщо зберігається тільки рядок, парсимо його
-                    birthday_date = datetime.strptime(record.birthday.value, "%d.%m.%Y").date()
-            except (ValueError, AttributeError):
-                # Пропускаємо записи з неправильним форматом дати
-                continue
-            
-            # Якщо не вдалося отримати дату, пропускаємо
-            if birthday_date is None:
-                continue
-            
-            # Створюємо дату народження для поточного року
-            birthday_this_year = birthday_date.replace(year=today.year)
-            
-            # Якщо день народження вже минув цього року, беремо наступний рік
-            if birthday_this_year < today:
-                birthday_this_year = birthday_date.replace(year=today.year + 1)
-            
-            # Перевіряємо, чи день народження припадає на наступні 7 днів
-            days_until_birthday = (birthday_this_year - today).days
-            
-            if 0 <= days_until_birthday <= 7:
-                # Перевіряємо, чи припадає на вихідний (субота=5, неділя=6)
-                congratulation_date = birthday_this_year
+                birthday_date = record.birthday.date
                 
-                # Якщо день народження припадає на суботу або неділю
-                if birthday_this_year.weekday() == 5:  # Субота
-                    congratulation_date = birthday_this_year + timedelta(days=2)  # Понеділок
-                elif birthday_this_year.weekday() == 6:  # Неділя
-                    congratulation_date = birthday_this_year + timedelta(days=1)  # Понеділок
                 
-                upcoming_birthdays.append({
-                    "name": record.name.value,
-                    "birthday": congratulation_date.strftime("%d.%m.%Y")
-                })
+                birthday_this_year = birthday_date.replace(year=today.year)
+                
+              
+                if birthday_this_year < today:
+                    birthday_this_year = birthday_date.replace(year=today.year + 1)
+                
+               
+                days_until_birthday = (birthday_this_year - today).days
+                
+                if 0 <= days_until_birthday <= 7:
+                    
+                    congratulation_date = birthday_this_year
+                    
+                    if birthday_this_year.weekday() == 5:  # Saturday
+                        congratulation_date = birthday_this_year + timedelta(days=2)  # Monday
+                    elif birthday_this_year.weekday() == 6:  # Sunday
+                        congratulation_date = birthday_this_year + timedelta(days=1)  # Monday
+                    
+                    upcoming_birthdays.append({
+                        "name": record.name.value,
+                        "birthday": congratulation_date.strftime("%d.%m.%Y")
+                    })
+                        
+            except (ValueError, AttributeError) as e:
+                # Skip records with invalid birthday format
+                continue
         
         return upcoming_birthdays
 
     
     def __str__(self):
         if not self.data:
-            return "Адресна книга порожня"
+            return "Address book is empty"
         return "\n".join(str(record) for record in self.data.values())
 
 class Record:
@@ -132,8 +207,9 @@ class Record:
     
     def __str__(self):
             
-        phone_str= "; ".join(phone.value for phone in self.phones)
-        return f'Contact name: {self.name.value}, phones: {phone_str}'
+        phone_str = "; ".join(phone.value for phone in self.phones)
+        birthday_str = f", birthday: {self.birthday.value}" if self.birthday else ""
+        return f'Contact name: {self.name.value}, phones: {phone_str}{birthday_str}'
 
             
 
