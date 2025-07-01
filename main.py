@@ -14,6 +14,9 @@ def input_error(func):
         except IndexError:
             return "Contact not found."
         
+        except AttributeError:
+            return "NoneType' object has no attribute."
+        
     return inner
 @input_error
 def parse_input(user_input):
@@ -40,46 +43,22 @@ def add_contact(args, book: AddressBook):
 
 @input_error
 def change_contact(args, book):
-    
-    
     name, old_phone, new_phone = args
     record = book.find(name)
-    
+    if not record:
+        return f"Contact {name} not found."
     record.edit_phone(old_phone, new_phone)
     return "Contact updated."
 
 @input_error
-def show_phone(args, book):
-    
+def show_phone(args, book): 
     name= args[0]
     num=book[name]
     return num
     
 @input_error
-def show_all(book):
-    if not book.data:
-        return "No contacts found."
-    
-    result = []
-    for record in book.data.values():
-        contact_info = f"Contact name: {record.name.value}"
-        
-        # Додаємо телефони
-        if record.phones:
-            phones = "; ".join(phone.value for phone in record.phones)
-            contact_info += f", phones: {phones}"
-        else:
-            contact_info += ", phones: No phones"
-        
-        # Додаємо день народження
-        if record.birthday:
-            contact_info += f", birthday: {record.birthday.value}"
-        else:
-            contact_info += ", birthday: No birthday"
-        
-        result.append(contact_info)
-    
-    return "\n".join(result)
+def show_all(book): 
+    return str(book)
 
 @input_error
 def add_birthday(args, book):
